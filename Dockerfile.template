@@ -1,0 +1,71 @@
+FROM resin/%%RESIN_MACHINE_NAME%%-debian
+
+MAINTAINER Viktor Petersson <vpetersson@screenly.io>
+
+# Setting up the `pi` user
+RUN    useradd pi -d /home/pi \
+    && /usr/sbin/usermod -a -G video pi
+
+WORKDIR /home/pi
+
+# Installing dependencies
+RUN    apt-get update \
+    && apt-get -y install \
+        build-essential \
+        git-core \
+        net-tools \
+        python \
+        python-netifaces \
+        python-simplejson \
+        python-imaging \
+        python-dev \
+        sqlite3 \
+        libffi-dev \
+        libssl-dev \
+        curl \
+        psmisc \
+        matchbox \
+        omxplayer \
+        uzbl x11-xserver-utils \
+        xserver-xorg \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Installing better pip
+RUN    curl -O https://bootstrap.pypa.io/get-pip.py \
+    && python get-pip.py \
+    && rm get-pip.py
+
+# Clone Screenly
+# Set SCREENLY_VERSION to the branch, tag, or commit you'd like to run
+ENV SCREENLY_VERSION=v0.12.1
+RUN     git clone https://github.com/Screenly/screenly-ose.git screenly \
+     && cd screenly \
+     && git checkout -b deploy ${SCREENLY_VERSION}
+
+# Install Python dependencies
+RUN pip install --upgrade -r screenly/requirements.txt
+
+# Set up services
+ENV SCREENLY_HOME=/data/screenly
+RUN    cd screenly/ansible/roles/screenly/files/ \
+    && cp screenly-websocket_server_layer.service /etc/systemd/system/screenly-websocket_server_layer.service \
+    && sed -i "/\[Service\]/ a\Environment=HOME=${SCREENLY_HOME}" /etc/systemd/system/screenly-websocket_server_layer.service \
+    && cp screenly-web.service /etc/systemd/system/screenly-web.service \
+    && sed -i "/\[Service\]/ a\Environment=HOME=${SCREENLY_HOME}" /etc/systemd/system/screenly-web.service \
+    && cp screenly-viewer.service /etc/systemd/system/screenly-viewer.service \
+    && sed -i -e "/\[Service\]/ a\Environment=HOME=${SCREENLY_HOME}" -e '/\[Service\]/ a\Environment=DISABLE_UPDATE_CHECK=True' /etc/systemd/system/screenly-viewer.service \
+    && cp X.service /etc/systemd/system/X.service \
+    && cp matchbox.service /etc/systemd/system/matchbox.service
+
+# Install configuration file
+RUN cp screenly/ansible/roles/screenly/files/gtkrc-2.0 .gtkrc-2.0
+
+# Enabling systemd in the container
+ENV INITSYSTEM on
+
+# Copy supplied screenly configuration
+COPY screenly.conf ./
+
+# On application start run the start script
+COPY startup.sh ./
+CMD ["bash", "startup.sh"]
