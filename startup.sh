@@ -53,7 +53,7 @@ function remove_port_forwarding {
     echo "Cleaning up port forwarding."
     iptables -t nat -D PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
 }
-if [ -z "${NO_PORT_FORDWARD}" ]; then
+if [ -z "${NO_PORT_FORDWARD+x}" ]; then
     # Setting up redirect of port 80 to 8080, so the device can be managed remotely
     echo "Setting up port forwarding."
     iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
