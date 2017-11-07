@@ -41,9 +41,6 @@ systemctl start screenly-websocket_server_layer.service
 
 # If extra debug information is required in the console, then show the container's
 # journal in the logs by setting the `DEBUG` environment variable to anything.
-if [ -n "${DEBUG}" ]; then
-    journalctl --follow --all --output=short
-fi
 
 # If device public URL is set up, port 80 has to be redirected to 8080 where the
 # management interface runs.
@@ -61,7 +58,11 @@ if [ -z "${NO_PORT_FORDWARD+x}" ]; then
     trap 'remove_port_forwarding' SIGINT SIGTERM
 fi
 
-# Idle so not to exit
-while : ; do
-    sleep 600;
-done
+if [ -n "${DEBUG}" ]; then
+    journalctl --follow --all --output=short
+else
+    # Idle so not to exit
+    while : ; do
+        sleep 600;
+    done
+fi
