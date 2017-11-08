@@ -38,7 +38,7 @@ RUN    curl -O https://bootstrap.pypa.io/get-pip.py \
 
 # Clone Screenly
 # Set SCREENLY_VERSION to the branch, tag, or commit you'd like to run
-ENV SCREENLY_VERSION=v0.12.1
+ENV SCREENLY_VERSION=master
 RUN     git clone https://github.com/Screenly/screenly-ose.git screenly \
      && cd screenly \
      && git checkout -b deploy ${SCREENLY_VERSION}
