@@ -12,6 +12,9 @@ WORKDIR /home/pi
 RUN    apt-get update \
     && apt-get -y install \
         build-essential \
+        apt-get install libcec3 cec-utils
+        -yq --no-install-recommends \
+        cron \
         git-core \
         net-tools \
         python \
